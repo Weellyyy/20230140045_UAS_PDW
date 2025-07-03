@@ -1,26 +1,20 @@
 <?php
-// Include file konfigurasi dan header
+// Pindahkan semua logika PHP ke bagian paling atas
+session_start();
 require_once '../config.php';
-$pageTitle = 'Detail & Penilaian Laporan';
-$activePage = 'laporan'; // Tetap aktifkan menu 'laporan'
-require_once 'templates/header.php';
 
 // --- LOGIKA FORM SUBMISSION (UPDATE NILAI) ---
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['laporan_id'])) {
     $laporan_id = $_POST['laporan_id'];
-    // Ambil nilai, pastikan itu integer. Beri nilai null jika kosong.
     $nilai = !empty($_POST['nilai']) ? (int)$_POST['nilai'] : null;
     $feedback = trim($_POST['feedback']);
-    // Status diubah menjadi 'dinilai' jika ada nilai yang diberikan
     $status = 'dinilai';
 
-    // Query untuk update nilai, feedback, dan status
     $sql = "UPDATE laporan SET nilai = ?, feedback = ?, status = ? WHERE id = ?";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("issi", $nilai, $feedback, $status, $laporan_id);
 
     if ($stmt->execute()) {
-        // Set session message untuk ditampilkan di halaman laporan.php
         $_SESSION['message'] = "Nilai dan feedback berhasil disimpan.";
         $_SESSION['message_type'] = 'success';
     } else {
@@ -44,7 +38,7 @@ if (!isset($_GET['id']) || empty($_GET['id'])) {
 $laporan_id = $_GET['id'];
 
 // Query untuk mengambil detail lengkap laporan
-$sql = "SELECT 
+$sql_detail = "SELECT 
             l.id, l.file_laporan, l.tanggal_kumpul, l.nilai, l.feedback,
             u.nama AS nama_mahasiswa,
             m.nama_modul,
@@ -54,20 +48,26 @@ $sql = "SELECT
         JOIN modul m ON l.id_modul = m.id
         JOIN mata_praktikum p ON m.id_praktikum = p.id
         WHERE l.id = ?";
-$stmt = $conn->prepare($sql);
-$stmt->bind_param("i", $laporan_id);
-$stmt->execute();
-$result = $stmt->get_result();
+$stmt_detail = $conn->prepare($sql_detail);
+$stmt_detail->bind_param("i", $laporan_id);
+$stmt_detail->execute();
+$result_detail = $stmt_detail->get_result();
 
-// Jika laporan tidak ditemukan, redirect kembali
-if ($result->num_rows === 0) {
+if ($result_detail->num_rows === 0) {
     $_SESSION['message'] = "Laporan tidak ditemukan.";
     $_SESSION['message_type'] = 'error';
     header("Location: laporan.php");
     exit();
 }
-$laporan = $result->fetch_assoc();
-$stmt->close();
+$laporan = $result_detail->fetch_assoc();
+$stmt_detail->close();
+// --- AKHIR LOGIKA PENGAMBILAN DATA ---
+
+
+// Sekarang baru kita panggil header, setelah semua logika selesai
+$pageTitle = 'Detail & Penilaian Laporan';
+$activePage = 'laporan';
+require_once 'templates/header.php';
 ?>
 
 <!-- Tampilan Detail dan Form Penilaian -->
@@ -96,7 +96,6 @@ $stmt->close();
             <div>
                 <p class="font-semibold">File Laporan:</p>
                 <?php if (!empty($laporan['file_laporan'])): 
-                    // Asumsi folder upload laporan ada di root/uploads/laporan/
                     $file_path = '../uploads/laporan/' . htmlspecialchars($laporan['file_laporan']);
                 ?>
                     <a href="<?php echo $file_path; ?>" download class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg inline-flex items-center mt-2">

@@ -1,9 +1,7 @@
 <?php
-// 1. Definisi Variabel untuk Template
-$pageTitle = 'Detail Praktikum';
-$activePage = 'my_courses'; // Tetap aktifkan menu 'Praktikum Saya'
-require_once '../config.php'; 
-require_once 'templates/header_mahasiswa.php';
+// Pindahkan semua logika PHP ke bagian paling atas
+session_start();
+require_once '../config.php';
 
 // --- LOGIKA PENGUMPULAN LAPORAN (FILE UPLOAD) ---
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['id_modul'])) {
@@ -15,13 +13,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['id_modul'])) {
     // Validasi file
     if (isset($file_laporan) && $file_laporan['error'] == 0) {
         $upload_dir = '../uploads/laporan/';
-        // Buat nama file unik: idmahasiswa_idmodul_timestamp_namafileasli
+        
+        // Pastikan direktori upload ada, jika tidak, coba buat
+        if (!is_dir($upload_dir)) {
+            mkdir($upload_dir, 0777, true);
+        }
+
         $new_file_name = $id_mahasiswa . '_' . $id_modul . '_' . time() . '_' . basename($file_laporan["name"]);
         $target_file = $upload_dir . $new_file_name;
 
-        // Coba pindahkan file yang diunggah
         if (move_uploaded_file($file_laporan["tmp_name"], $target_file)) {
-            // Simpan data ke tabel laporan
             $sql = "INSERT INTO laporan (id_modul, id_mahasiswa, file_laporan, status) VALUES (?, ?, ?, 'dikumpulkan')";
             $stmt = $conn->prepare($sql);
             $stmt->bind_param("iis", $id_modul, $id_mahasiswa, $new_file_name);
@@ -35,7 +36,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['id_modul'])) {
             }
             $stmt->close();
         } else {
-             $_SESSION['message'] = "Gagal mengunggah file laporan.";
+             $_SESSION['message'] = "Gagal mengunggah file laporan. Pastikan folder 'uploads/laporan' ada dan writable.";
              $_SESSION['message_type'] = 'error';
         }
     } else {
@@ -77,6 +78,13 @@ $stmt_modul = $conn->prepare($sql_modul);
 $stmt_modul->bind_param("ii", $id_mahasiswa, $id_praktikum);
 $stmt_modul->execute();
 $result_modul = $stmt_modul->get_result();
+// --- AKHIR LOGIKA PENGAMBILAN DATA ---
+
+
+// Sekarang baru kita panggil header, setelah semua logika selesai
+$pageTitle = 'Detail Praktikum';
+$activePage = 'my_courses';
+require_once 'templates/header_mahasiswa.php';
 ?>
 
 <!-- Tampilan Notifikasi -->
