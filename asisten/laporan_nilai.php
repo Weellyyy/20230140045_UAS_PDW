@@ -30,16 +30,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['laporan_id'])) {
 
 
 // --- LOGIKA PENGAMBILAN DATA UNTUK DITAMPILKAN ---
-// Pastikan ID laporan ada di URL
 if (!isset($_GET['id']) || empty($_GET['id'])) {
     header("Location: laporan.php");
     exit();
 }
 $laporan_id = $_GET['id'];
 
-// Query untuk mengambil detail lengkap laporan
+// Query untuk mengambil detail lengkap laporan, termasuk kolom link_laporan
 $sql_detail = "SELECT 
-            l.id, l.file_laporan, l.tanggal_kumpul, l.nilai, l.feedback,
+            l.id, l.file_laporan, l.link_laporan, l.tanggal_kumpul, l.nilai, l.feedback,
             u.nama AS nama_mahasiswa,
             m.nama_modul,
             p.nama_praktikum
@@ -93,43 +92,42 @@ require_once 'templates/header.php';
                 <p class="font-semibold">Tanggal Kumpul:</p>
                 <p><?php echo date('d M Y, H:i', strtotime($laporan['tanggal_kumpul'])); ?></p>
             </div>
+            
+            <!-- ====== BAGIAN YANG DIPERBARUI ====== -->
             <div>
-                <p class="font-semibold">File Laporan:</p>
-                <?php if (!empty($laporan['file_laporan'])): 
-                    $file_path = '../uploads/laporan/' . htmlspecialchars($laporan['file_laporan']);
-                ?>
-                    <a href="<?php echo $file_path; ?>" download class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg inline-flex items-center mt-2">
+                <p class="font-semibold">Hasil Laporan:</p>
+                <?php if (!empty($laporan['file_laporan'])): // Jika ada file ?>
+                    <a href="../uploads/laporan/<?php echo htmlspecialchars($laporan['file_laporan']); ?>" download class="inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg mt-2">
                         <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
-                        Unduh Laporan
+                        Unduh File Laporan
+                    </a>
+                <?php elseif (!empty($laporan['link_laporan'])): // Jika ada link ?>
+                     <a href="<?php echo htmlspecialchars($laporan['link_laporan']); ?>" target="_blank" class="inline-flex items-center bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg mt-2">
+                        <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" /></svg>
+                        Buka Link Laporan
                     </a>
                 <?php else: ?>
-                    <p class="text-red-500">File tidak ditemukan.</p>
+                    <p class="text-red-500 mt-2">Tidak ada laporan yang dikumpulkan.</p>
                 <?php endif; ?>
             </div>
+            <!-- ====== AKHIR DARI BAGIAN YANG DIPERBARUI ====== -->
+
         </div>
     </div>
 
     <!-- Kolom Kanan: Form Penilaian -->
     <div class="lg:col-span-2 bg-white p-8 rounded-lg shadow-lg">
         <h2 class="text-2xl font-bold text-gray-800 mb-6">Form Penilaian</h2>
-        
         <form action="laporan_nilai.php" method="POST">
-            <!-- Hidden input untuk ID Laporan -->
             <input type="hidden" name="laporan_id" value="<?php echo $laporan['id']; ?>">
-            
-            <!-- Form Group untuk Nilai -->
             <div class="mb-4">
                 <label for="nilai" class="block text-gray-700 text-sm font-bold mb-2">Nilai (Angka)</label>
                 <input type="number" id="nilai" name="nilai" min="0" max="100" value="<?php echo htmlspecialchars($laporan['nilai']); ?>" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
             </div>
-            
-            <!-- Form Group untuk Feedback -->
             <div class="mb-6">
                 <label for="feedback" class="block text-gray-700 text-sm font-bold mb-2">Feedback (Teks)</label>
                 <textarea id="feedback" name="feedback" rows="8" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"><?php echo htmlspecialchars($laporan['feedback']); ?></textarea>
             </div>
-            
-            <!-- Tombol Aksi -->
             <div class="flex items-center justify-end">
                 <a href="laporan.php" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg mr-2">
                     Kembali
@@ -143,7 +141,6 @@ require_once 'templates/header.php';
 </div>
 
 <?php
-// Include footer
 $conn->close();
 require_once 'templates/footer.php';
 ?>

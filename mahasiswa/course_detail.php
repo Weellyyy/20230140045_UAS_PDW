@@ -3,55 +3,74 @@
 session_start();
 require_once '../config.php';
 
-// --- LOGIKA PENGUMPULAN LAPORAN (FILE UPLOAD) ---
+// --- LOGIKA PENGUMPULAN LAPORAN (FILE ATAU LINK) ---
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['id_modul'])) {
     $id_mahasiswa = $_SESSION['user_id'];
     $id_modul = $_POST['id_modul'];
-    $id_praktikum = $_POST['id_praktikum']; // Untuk redirect kembali
-    $file_laporan = $_FILES['file_laporan'];
+    $id_praktikum = $_POST['id_praktikum'];
+    $submission_type = $_POST['submission_type'];
 
-    // Validasi file
-    if (isset($file_laporan) && $file_laporan['error'] == 0) {
-        $upload_dir = '../uploads/laporan/';
-        
-        // Pastikan direktori upload ada, jika tidak, coba buat
-        if (!is_dir($upload_dir)) {
-            mkdir($upload_dir, 0777, true);
-        }
+    $file_laporan_name = null;
+    $link_laporan_url = null;
 
-        $new_file_name = $id_mahasiswa . '_' . $id_modul . '_' . time() . '_' . basename($file_laporan["name"]);
-        $target_file = $upload_dir . $new_file_name;
+    $is_success = false;
 
-        if (move_uploaded_file($file_laporan["tmp_name"], $target_file)) {
-            $sql = "INSERT INTO laporan (id_modul, id_mahasiswa, file_laporan, status) VALUES (?, ?, ?, 'dikumpulkan')";
-            $stmt = $conn->prepare($sql);
-            $stmt->bind_param("iis", $id_modul, $id_mahasiswa, $new_file_name);
-            
-            if ($stmt->execute()) {
-                $_SESSION['message'] = "Laporan berhasil dikumpulkan.";
-                $_SESSION['message_type'] = 'success';
+    // Jika tipe pengumpulan adalah 'file'
+    if ($submission_type === 'file') {
+        $file_laporan = $_FILES['file_laporan'];
+        if (isset($file_laporan) && $file_laporan['error'] == 0) {
+            $upload_dir = '../uploads/laporan/';
+            if (!is_dir($upload_dir)) {
+                mkdir($upload_dir, 0777, true);
+            }
+            $new_file_name = $id_mahasiswa . '_' . $id_modul . '_' . time() . '_' . basename($file_laporan["name"]);
+            $target_file = $upload_dir . $new_file_name;
+
+            if (move_uploaded_file($file_laporan["tmp_name"], $target_file)) {
+                $file_laporan_name = $new_file_name;
+                $is_success = true;
             } else {
-                $_SESSION['message'] = "Gagal menyimpan data laporan ke database.";
+                $_SESSION['message'] = "Gagal mengunggah file laporan.";
                 $_SESSION['message_type'] = 'error';
             }
-            $stmt->close();
         } else {
-             $_SESSION['message'] = "Gagal mengunggah file laporan. Pastikan folder 'uploads/laporan' ada dan writable.";
-             $_SESSION['message_type'] = 'error';
+            $_SESSION['message'] = "Tidak ada file yang dipilih atau terjadi error saat upload.";
+            $_SESSION['message_type'] = 'error';
         }
-    } else {
-        $_SESSION['message'] = "Tidak ada file yang dipilih atau terjadi error saat upload.";
-        $_SESSION['message_type'] = 'error';
+    } 
+    // Jika tipe pengumpulan adalah 'link'
+    elseif ($submission_type === 'link') {
+        $link_laporan_url = trim($_POST['link_laporan']);
+        if (!empty($link_laporan_url) && filter_var($link_laporan_url, FILTER_VALIDATE_URL)) {
+            $is_success = true;
+        } else {
+            $_SESSION['message'] = "URL yang Anda masukkan tidak valid.";
+            $_SESSION['message_type'] = 'error';
+        }
     }
-    // Redirect kembali ke halaman yang sama untuk refresh dan menampilkan pesan
+
+    // Jika salah satu metode berhasil, simpan ke database
+    if ($is_success) {
+        $sql = "INSERT INTO laporan (id_modul, id_mahasiswa, file_laporan, link_laporan, status) VALUES (?, ?, ?, ?, 'dikumpulkan')";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("iiss", $id_modul, $id_mahasiswa, $file_laporan_name, $link_laporan_url);
+        
+        if ($stmt->execute()) {
+            $_SESSION['message'] = "Laporan berhasil dikumpulkan.";
+            $_SESSION['message_type'] = 'success';
+        } else {
+            $_SESSION['message'] = "Gagal menyimpan data laporan ke database.";
+            $_SESSION['message_type'] = 'error';
+        }
+        $stmt->close();
+    }
+    
     header("Location: course_detail.php?id=" . $id_praktikum);
     exit();
 }
-// --- AKHIR LOGIKA PENGUMPULAN LAPORAN ---
-
+// --- AKHIR LOGIKA PENGUMPULAN ---
 
 // --- LOGIKA PENGAMBILAN DATA ---
-// Pastikan ID praktikum ada di URL
 if (!isset($_GET['id']) || empty($_GET['id'])) {
     header("Location: my_courses.php");
     exit();
@@ -59,17 +78,15 @@ if (!isset($_GET['id']) || empty($_GET['id'])) {
 $id_praktikum = $_GET['id'];
 $id_mahasiswa = $_SESSION['user_id'];
 
-// Ambil detail mata praktikum
 $stmt_praktikum = $conn->prepare("SELECT nama_praktikum, deskripsi FROM mata_praktikum WHERE id = ?");
 $stmt_praktikum->bind_param("i", $id_praktikum);
 $stmt_praktikum->execute();
 $praktikum = $stmt_praktikum->get_result()->fetch_assoc();
 $stmt_praktikum->close();
 
-// Ambil semua modul untuk praktikum ini, beserta status laporan mahasiswa yang login
 $sql_modul = "SELECT 
                 m.id, m.nama_modul, m.deskripsi, m.file_materi,
-                l.file_laporan, l.nilai, l.feedback, l.status
+                l.file_laporan, l.link_laporan, l.nilai, l.feedback, l.status
               FROM modul m
               LEFT JOIN laporan l ON m.id = l.id_modul AND l.id_mahasiswa = ?
               WHERE m.id_praktikum = ?
@@ -80,8 +97,6 @@ $stmt_modul->execute();
 $result_modul = $stmt_modul->get_result();
 // --- AKHIR LOGIKA PENGAMBILAN DATA ---
 
-
-// Sekarang baru kita panggil header, setelah semua logika selesai
 $pageTitle = 'Detail Praktikum';
 $activePage = 'my_courses';
 require_once 'templates/header_mahasiswa.php';
@@ -105,17 +120,13 @@ require_once 'templates/header_mahasiswa.php';
     <?php if ($result_modul->num_rows > 0): ?>
         <?php while($modul = $result_modul->fetch_assoc()): ?>
             <div class="bg-white rounded-2xl shadow-md overflow-hidden" x-data="{ open: false }">
-                <!-- Header Accordion -->
                 <div @click="open = !open" class="p-6 cursor-pointer flex justify-between items-center">
                     <h3 class="text-xl font-bold text-slate-800"><?php echo htmlspecialchars($modul['nama_modul']); ?></h3>
                     <svg class="w-6 h-6 text-slate-500 transition-transform" :class="{ 'rotate-180': open }" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
                 </div>
-                <!-- Konten Accordion -->
                 <div x-show="open" x-transition class="p-6 border-t border-slate-200">
                     <p class="text-slate-600 mb-6"><?php echo htmlspecialchars($modul['deskripsi']); ?></p>
-                    
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- Kolom Materi -->
                         <div class="bg-slate-50 p-4 rounded-lg">
                             <h4 class="font-bold text-slate-700 mb-2">Materi Pembelajaran</h4>
                             <?php if (!empty($modul['file_materi'])): ?>
@@ -127,12 +138,9 @@ require_once 'templates/header_mahasiswa.php';
                                 <p class="text-sm text-slate-500">Materi belum tersedia.</p>
                             <?php endif; ?>
                         </div>
-
-                        <!-- Kolom Laporan & Penilaian -->
                         <div class="bg-slate-50 p-4 rounded-lg">
                             <h4 class="font-bold text-slate-700 mb-2">Laporan & Penilaian</h4>
-                            
-                            <?php if ($modul['status']): // Jika sudah ada laporan yang dikumpulkan ?>
+                            <?php if ($modul['status']): // Jika sudah ada laporan ?>
                                 <div class="space-y-3">
                                     <p class="text-sm font-semibold">Status: 
                                         <span class="capitalize px-2 py-1 text-xs font-semibold rounded-full <?php echo $modul['status'] == 'dinilai' ? 'bg-green-200 text-green-800' : 'bg-yellow-200 text-yellow-800'; ?>">
@@ -148,14 +156,38 @@ require_once 'templates/header_mahasiswa.php';
                                     </div>
                                 </div>
                             <?php else: // Jika belum ada laporan ?>
-                                <form action="course_detail.php?id=<?php echo $id_praktikum; ?>" method="POST" enctype="multipart/form-data">
-                                    <input type="hidden" name="id_modul" value="<?php echo $modul['id']; ?>">
-                                    <input type="hidden" name="id_praktikum" value="<?php echo $id_praktikum; ?>">
-                                    <input type="file" name="file_laporan" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" required>
-                                    <button type="submit" class="mt-3 w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg">
-                                        Kumpulkan Laporan
-                                    </button>
-                                </form>
+                                <div x-data="{ submissionType: 'file' }">
+                                    <!-- Tab Buttons -->
+                                    <div class="mb-4 border-b border-slate-200">
+                                        <nav class="flex -mb-px space-x-4">
+                                            <button @click="submissionType = 'file'" :class="submissionType === 'file' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'" class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm">
+                                                Upload File
+                                            </button>
+                                            <button @click="submissionType = 'link'" :class="submissionType === 'link' ? 'border-blue-500 text-blue-600' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'" class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm">
+                                                Submit Link
+                                            </button>
+                                        </nav>
+                                    </div>
+                                    <!-- Form -->
+                                    <form action="course_detail.php?id=<?php echo $id_praktikum; ?>" method="POST" enctype="multipart/form-data">
+                                        <input type="hidden" name="id_modul" value="<?php echo $modul['id']; ?>">
+                                        <input type="hidden" name="id_praktikum" value="<?php echo $id_praktikum; ?>">
+                                        <input type="hidden" name="submission_type" x-model="submissionType">
+                                        
+                                        <!-- File Upload Tab -->
+                                        <div x-show="submissionType === 'file'">
+                                            <input type="file" name="file_laporan" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                                        </div>
+                                        <!-- Link Submit Tab -->
+                                        <div x-show="submissionType === 'link'" style="display: none;">
+                                            <input type="url" name="link_laporan" placeholder="https://docs.google.com/..." class="shadow appearance-none border rounded w-full py-2 px-3 text-slate-700 leading-tight focus:outline-none focus:shadow-outline">
+                                        </div>
+                                        
+                                        <button type="submit" class="mt-4 w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg">
+                                            Kumpulkan Laporan
+                                        </button>
+                                    </form>
+                                </div>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -170,7 +202,6 @@ require_once 'templates/header_mahasiswa.php';
     <?php endif; ?>
 </div>
 
-<!-- Script untuk Alpine.js (Accordion) -->
 <script src="//unpkg.com/alpinejs" defer></script>
 
 <?php
