@@ -1,18 +1,9 @@
 <?php
+// Pindahkan semua logika PHP ke bagian paling atas, sebelum ada output HTML.
+session_start(); // Pastikan session dimulai di awal jika menggunakan $_SESSION
 require_once '../config.php';
-$pageTitle = 'Form Modul';
-$activePage = 'modul';
-require_once 'templates/header.php';
 
-// Inisialisasi variabel
-$id = '';
-$id_praktikum = '';
-$nama_modul = '';
-$deskripsi = '';
-$current_file = '';
-$form_title = 'Tambah Modul Baru';
-
-// Logika untuk menangani form submission (CREATE/UPDATE)
+// --- LOGIKA FORM SUBMISSION (CREATE/UPDATE) ---
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $id = $_POST['id'];
     $id_praktikum = $_POST['id_praktikum'];
@@ -24,19 +15,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (empty($id_praktikum) || empty($nama_modul)) {
         $_SESSION['message'] = "Mata praktikum dan nama modul tidak boleh kosong.";
         $_SESSION['message_type'] = 'error';
+        // Redirect kembali ke form jika ada error validasi
+        header("Location: modul_form.php" . (!empty($id) ? "?edit_id=$id" : ""));
+        exit();
     } else {
         $file_name_to_db = $_POST['current_file']; // Default ke file yang sudah ada
 
         // Proses upload file jika ada file baru yang diunggah
         if (isset($file_materi) && $file_materi['error'] == 0) {
             $upload_dir = '../uploads/materi/';
-            // Buat nama file unik untuk menghindari tumpang tindih
             $new_file_name = time() . '_' . basename($file_materi["name"]);
             $target_file = $upload_dir . $new_file_name;
 
-            // Coba pindahkan file yang diunggah
             if (move_uploaded_file($file_materi["tmp_name"], $target_file)) {
-                // Jika berhasil, hapus file lama (saat mode edit)
                 if (!empty($file_name_to_db) && file_exists($upload_dir . $file_name_to_db)) {
                     unlink($upload_dir . $file_name_to_db);
                 }
@@ -68,14 +59,26 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $_SESSION['message'] = "Modul berhasil $action.";
             $_SESSION['message_type'] = 'success';
         } else {
-            $_SESSION['message'] = "Gagal memproses data modul.";
+            $_SESSION['message'] = "Gagal memproses data modul: " . $stmt->error;
             $_SESSION['message_type'] = 'error';
         }
         $stmt->close();
+        // Setelah selesai, redirect ke halaman utama modul
         header("Location: modul.php");
         exit();
     }
 }
+// --- AKHIR LOGIKA FORM SUBMISSION ---
+
+
+// --- LOGIKA PENGAMBILAN DATA UNTUK FORM ---
+// Inisialisasi variabel
+$id = '';
+$id_praktikum = '';
+$nama_modul = '';
+$deskripsi = '';
+$current_file = '';
+$form_title = 'Tambah Modul Baru';
 
 // Cek jika ini adalah mode edit untuk mengisi form
 if (isset($_GET['edit_id'])) {
@@ -99,8 +102,21 @@ if (isset($_GET['edit_id'])) {
 
 // Mengambil daftar mata praktikum untuk dropdown
 $praktikum_list = $conn->query("SELECT id, nama_praktikum FROM mata_praktikum ORDER BY nama_praktikum ASC");
+// --- AKHIR LOGIKA PENGAMBILAN DATA ---
 
+
+// Sekarang baru kita panggil header, setelah semua logika selesai
+$pageTitle = 'Form Modul';
+$activePage = 'modul';
+require_once 'templates/header.php';
 ?>
+
+<!-- Tampilan Notifikasi untuk error validasi -->
+<?php if (isset($_SESSION['message']) && $_SESSION['message_type'] == 'error'): ?>
+<div class="mb-4 p-4 rounded-md bg-red-100 text-red-800">
+    <?php echo $_SESSION['message']; unset($_SESSION['message']); unset($_SESSION['message_type']); ?>
+</div>
+<?php endif; ?>
 
 <div class="bg-white p-8 rounded-lg shadow-lg max-w-2xl mx-auto">
     <h2 class="text-2xl font-bold text-gray-800 mb-6"><?php echo $form_title; ?></h2>
