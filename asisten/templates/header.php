@@ -57,7 +57,6 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'asisten') {
                         <span>Manajemen Modul</span>
                     </a>
                 </li>
-                <!-- ====== NAVIGASI BARU DITAMBAHKAN DI SINI ====== -->
                 <li>
                     <a href="laporan.php" class="<?php echo ($activePage == 'laporan') ? $activeClass : $inactiveClass; ?> flex items-center px-4 py-3 rounded-md transition-colors duration-200">
                         <!-- Icon Laporan -->
@@ -65,8 +64,15 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] != 'asisten') {
                         <span>Laporan Masuk</span>
                     </a>
                 </li>
-
-                 
+                <!-- ====== NAVIGASI BARU DITAMBAHKAN DI SINI ====== -->
+                <li>
+                    <a href="pengguna.php" class="<?php echo ($activePage == 'pengguna') ? $activeClass : $inactiveClass; ?> flex items-center px-4 py-3 rounded-md transition-colors duration-200">
+                        <!-- Icon Pengguna -->
+                        <svg class="w-5 h-5 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m-7.5-2.962A3.75 3.75 0 0112 15v-2.25A3.75 3.75 0 0115.75 9v-2.25A3.75 3.75 0 0112 3V.75m-6.506 5.668a3.75 3.75 0 01-2.25-2.25A3.75 3.75 0 015.25 3V.75m8.25 0a2.25 2.25 0 012.25 2.25m0 0a2.25 2.25 0 01-2.25 2.25m0 0a2.25 2.25 0 01-2.25-2.25m2.25-2.25a2.25 2.25 0 012.25-2.25M9 15.75A3.75 3.75 0 0112 12v-2.25A3.75 3.75 0 019 5.25v-2.25A3.75 3.75 0 015.25.75m0 0A2.25 2.25 0 013 3m0 0a2.25 2.25 0 01-2.25 2.25m0 0a2.25 2.25 0 012.25 2.25m-2.25 2.25a2.25 2.25 0 012.25-2.25m0 0a2.25 2.25 0 01-2.25-2.25m6.75-3.375a3.75 3.75 0 01-2.25-2.25m2.25 2.25a3.75 3.75 0 012.25 2.25m-11.25 3.542a3.75 3.75 0 012.25-2.25m2.25 2.25a3.75 3.75 0 01-2.25 2.25m-2.25-2.25a3.75 3.75 0 01-2.25-2.25m11.25 0a3.75 3.75 0 012.25 2.25m-2.25-2.25a3.75 3.75 0 012.25-2.25" /></svg>
+                        <span>Manajemen Pengguna</span>
+                    </a>
+                </li>
+                 <!-- ====== AKHIR DARI NAVIGASI BARU ====== -->
             </ul>
         </nav>
         <div class="p-4 mt-auto">
