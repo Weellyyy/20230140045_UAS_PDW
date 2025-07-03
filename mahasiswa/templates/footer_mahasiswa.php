@@ -1,5 +1,5 @@
         <!-- Akhir dari konten halaman -->
-    </div> <!-- Akhir dari Wrapper Konten Utama -->
+    </main> <!-- Akhir dari Wrapper Konten Utama -->
 
     <script>
         // Script untuk toggle menu mobile

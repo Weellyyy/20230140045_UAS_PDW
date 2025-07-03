@@ -17,53 +17,61 @@ if (!isset($_SESSION['user_id'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel Mahasiswa - <?php echo $pageTitle ?? 'SIMPRAK'; ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        /* Menambahkan transisi halus untuk semua elemen */
-        * {
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Menambahkan transisi halus untuk semua elemen interaktif */
+        a, button {
             transition: all 0.2s ease-in-out;
         }
     </style>
 </head>
-<body class="bg-slate-50 font-sans">
+<body class="bg-slate-100">
 
     <!-- Navbar Utama -->
-    <nav class="bg-white shadow-lg sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <header class="bg-white/80 backdrop-blur-lg shadow-sm sticky top-0 z-50">
+        <div class="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-20">
                 
                 <!-- Logo -->
                 <div class="flex items-center">
                     <a href="dashboard.php" class="flex-shrink-0 flex items-center">
-                        <svg class="w-8 h-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-1.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0V12a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 12V5.25" />
-                        </svg>
-                        <span class="text-2xl font-bold text-slate-800 ml-2">SIMPRAK</span>
+                        <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-2 rounded-lg">
+                            <svg class="w-7 h-7 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-1.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0V12a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 12V5.25" />
+                            </svg>
+                        </div>
+                        <span class="text-2xl font-extrabold text-slate-800 ml-3 tracking-tight">SIMPRAK</span>
                     </a>
                 </div>
 
                 <!-- Menu Navigasi (Desktop) -->
-                <div class="hidden md:block">
-                    <div class="ml-10 flex items-baseline space-x-4">
-                        <?php 
-                            $activeClass = 'bg-blue-600 text-white';
-                            $inactiveClass = 'text-slate-500 hover:bg-blue-600 hover:text-white';
-                        ?>
-                        <a href="dashboard.php" class="<?php echo ($activePage == 'dashboard') ? $activeClass : $inactiveClass; ?> px-3 py-2 rounded-md text-sm font-medium">Dashboard</a>
-                        <a href="my_courses.php" class="<?php echo ($activePage == 'my_courses') ? $activeClass : $inactiveClass; ?> px-3 py-2 rounded-md text-sm font-medium">Praktikum Saya</a>
-                        <a href="courses.php" class="<?php echo ($activePage == 'courses') ? $activeClass : $inactiveClass; ?> px-3 py-2 rounded-md text-sm font-medium">Cari Praktikum</a>
-                    </div>
+                <div class="hidden md:flex items-center space-x-2">
+                    <?php 
+                        $activeClass = 'bg-blue-600 text-white shadow-sm';
+                        $inactiveClass = 'text-slate-500 hover:bg-blue-100 hover:text-blue-700';
+                    ?>
+                    <a href="dashboard.php" class="<?php echo ($activePage == 'dashboard') ? $activeClass : $inactiveClass; ?> px-4 py-2 rounded-lg text-sm font-semibold">Dashboard</a>
+                    <a href="my_courses.php" class="<?php echo ($activePage == 'my_courses') ? $activeClass : $inactiveClass; ?> px-4 py-2 rounded-lg text-sm font-semibold">Praktikum Saya</a>
+                    <a href="courses.php" class="<?php echo ($activePage == 'courses') ? $activeClass : $inactiveClass; ?> px-4 py-2 rounded-lg text-sm font-semibold">Cari Praktikum</a>
                 </div>
 
                 <!-- Profil Pengguna & Logout -->
-                <div class="hidden md:block">
-                    <div class="ml-4 flex items-center md:ml-6">
-                        <span class="text-slate-600 mr-3">
-                            Halo, <strong class="font-semibold"><?php echo htmlspecialchars($_SESSION['nama']); ?></strong>
-                        </span>
-                        <a href="../logout.php" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300 text-sm">
-                            Logout
-                        </a>
+                <div class="hidden md:flex items-center space-x-4">
+                    <div class="text-right">
+                        <p class="font-semibold text-slate-800 text-sm"><?php echo htmlspecialchars($_SESSION['nama']); ?></p>
+                        <p class="text-xs text-slate-500 capitalize"><?php echo htmlspecialchars($_SESSION['role']); ?></p>
                     </div>
+                    <div class="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center font-bold text-white text-xl">
+                        <?php echo strtoupper(substr($_SESSION['nama'], 0, 1)); ?>
+                    </div>
+                    <a href="../logout.php" title="Logout" class="p-2 rounded-full text-slate-500 hover:bg-red-100 hover:text-red-600">
+                        <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" /></svg>
+                    </a>
                 </div>
 
                 <!-- Tombol Hamburger (Mobile) -->
@@ -91,7 +99,7 @@ if (!isset($_SESSION['user_id'])) {
                     </div>
                     <div class="ml-3">
                         <div class="text-base font-medium leading-none text-slate-800"><?php echo htmlspecialchars($_SESSION['nama']); ?></div>
-                        <div class="text-sm font-medium leading-none text-slate-500 mt-1"><?php echo htmlspecialchars($_SESSION['role']); ?></div>
+                        <div class="text-sm font-medium leading-none text-slate-500 mt-1 capitalize"><?php echo htmlspecialchars($_SESSION['role']); ?></div>
                     </div>
                 </div>
                 <div class="mt-3 px-2 space-y-1">
@@ -99,8 +107,8 @@ if (!isset($_SESSION['user_id'])) {
                 </div>
             </div>
         </div>
-    </nav>
+    </header>
 
     <!-- Wrapper Konten Utama -->
-    <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+    <main class="max-w-screen-xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <!-- Konten halaman akan dimulai di sini -->
