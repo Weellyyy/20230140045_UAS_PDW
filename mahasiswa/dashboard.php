@@ -49,7 +49,7 @@ $notif_nilai->close();
 <!-- Welcome Banner dengan Gradien Baru -->
 <div class="bg-gradient-to-br from-blue-600 to-indigo-700 text-white p-8 rounded-2xl shadow-lg mb-8">
     <h1 class="text-4xl font-extrabold tracking-tight">Selamat Datang, <?php echo htmlspecialchars(explode(' ', $_SESSION['nama'])[0]); ?>!</h1>
-    <p class="mt-2 text-lg opacity-90">Ini adalah pusat kendali untuk semua aktivitas praktikum Anda. Terus semangat!</p>
+    <p class="mt-2 text-lg opacity-90">semangat ngoding ya</p>
 </div>
 
 <!-- Grid untuk Kartu Statistik yang Ditingkatkan -->
